@@ -1,0 +1,50 @@
+# Instaling required packages
+install.packages("tidyverse",repos = "http://cran.us.r-project.org")
+install.packages("lubridate",repos = "http://cran.us.r-project.org")
+install.packages("ggthemes",repos= "http://cran.us.r-project.org")
+install.packages("ggrepel",repos="http://cran.us.r-project.org")
+
+# Loading required packages
+library(tidyverse)
+library(lubridate)
+library(ggrepel)
+
+# Importing the dataset
+earthquake <- read.csv("database.csv")
+
+# Cleaning the dataset
+earthquake_1 <- select(earthquake,Date,Time,Latitude,Longitude,Type,Depth,Magnitude)
+
+earthquake_1$Date <- as.Date(earthquake_1$Date)
+
+earthquake_1$Type <- as.factor(earthquake_1$Type)
+earthquake_1$Latitude <- round(earthquake_1$Latitude,4)
+earthquake_1$Longitude <- round(earthquake_1$Longitude,4)
+earthquake_1$Magnitude <- round(earthquake_1$Magnitude,1)
+
+# Analyzing data
+earthquake_1 <- earthquake_1 %>% filter(!is.na(earthquake_1$Latitude)) %>% 
+  filter(!is.na(earthquake_1$Longitude)) %>% 
+  filter(!is.na(earthquake_1$Magnitude))
+earthquake_1 <- subset(earthquake_1,Type == "Earthquake" & Magnitude > 7.0)
+
+# Visualizing data
+world_coordinates <- map_data("world")
+
+library(ggthemes)
+pl <- ggplot() + geom_map(data=world_coordinates,map = world_coordinates,aes(long,lat,map_id=region),color="black",fill="lightblue",size=0.2) +
+  geom_point(data=earthquake_1,aes(Longitude,Latitude,size=Magnitude),alpha=0.3,color="red") +
+  ggtitle("Significant earthquakes across Globe (1965-2016)",subtitle = "Earthqauke higher than magnitude of 7.0") +
+  theme_economist()
+Points <- data.frame(lon=c(95.982,142.373),lat=c(3.295,38.297),name=c("Higher than 8.9 Mag","Higher than 8.9 Mag"))
+library(ggrepel)
+pl2 <- pl + 
+  geom_point(data = Points, 
+             aes(x = lon, y = lat),
+             size = 3) +
+  geom_label_repel(data = Points, 
+                   aes(x = lon, y = lat, label = name),
+                   size = 4,
+                   vjust = 0,
+                   hjust = 2)
+print(pl2)
